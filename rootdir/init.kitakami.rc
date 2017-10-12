@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import init.common.rc
+import init.common.srv-legacy.rc
 import init.common.usb-legacy.rc
 import init.kitakami.pwr.rc
 
@@ -89,7 +90,7 @@ on boot
     write /dev/cpuset/camera-daemon/cpus 0-3
 
 # OSS WLAN and BT MAC setup
-service macaddrsetup /system/bin/macaddrsetup /sys/devices/soc.0/bcmdhd_wlan.90/macaddr
+service macaddrsetup /system/vendor/bin/macaddrsetup /sys/devices/soc.0/bcmdhd_wlan.90/macaddr
     class core
     user system
     group system bluetooth
@@ -125,21 +126,6 @@ service p2p_supplicant /system/bin/wpa_supplicant \
     disabled
     oneshot
 
-# QCOM prop
-service per_mgr /system/vendor/bin/pm-service
-    class core
-    user system
-    group system net_raw
-    writepid /dev/cpuset/system-background/tasks
-
-# QCOM prop
-service per_proxy /system/vendor/bin/pm-proxy
-    class core
-    user system
-    group system net_raw
-    disabled
-    writepid /dev/cpuset/system-background/tasks
-
 # Sensor
 service pad_controller /system/vendor/bin/pad_controller
     class main
@@ -158,15 +144,8 @@ service fingerprintd /system/bin/fingerprintd
     group input
     writepid /dev/cpuset/system-background/tasks
 
-service msm_irqbalance /system/vendor/bin/msm_irqbalance -f /system/etc/msm_irqbalance.conf
-    socket msm_irqbalance seqpacket 660 root system
-    class core
-    user root
-    group root
-    writepid /dev/cpuset/system-background/tasks
-
 # brcm-uim-sysfs (BT/FM/ANT+)
-service uim /system/bin/brcm-uim-sysfs
+service uim /system/vendor/bin/brcm-uim-sysfs
     class late_start
     user root
     group bluetooth net_bt_admin net_bt
@@ -179,16 +158,3 @@ on property:vold.post_fs_data_done=1
 
 on property:bluetooth.isEnabled=true
     write /sys/class/bluetooth/hci0/idle_timeout 7000
-
-on property:init.svc.per_mgr=running
-    start per_proxy
-
-on property:sys.shutdown.requested=*
-    stop per_proxy
-
-# Camera
-service qcamerasvr /system/vendor/bin/mm-qcamera-daemon
-    class late_start
-    user camera
-    group camera system inet input graphics
-    writepid /dev/cpuset/camera-daemon/tasks
